@@ -1,0 +1,166 @@
+name: Release
+
+# Publishes a version of @stackradar/node. Started by a maintainer with the
+# version to release. The version is set here, not in the repository:
+# packages/node/package.json stays at 0.0.0.
+#
+# The version is staged on npm through trusted publishing, with provenance.
+# A maintainer approves it with 2FA (`npm stage approve`) before anyone can
+# install it. The tag and the GitHub Release follow once it is on npm.
+#
+# Staging and the release are separate jobs: if the release job times out
+# waiting for the approval, "Re-run failed jobs" retries only that job,
+# because npm refuses to stage the same version twice.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, e.g. 0.1.0'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  VERSION: ${{ inputs.version }}
+  TAG: v${{ inputs.version }}
+
+jobs:
+  stage:
+    name: Stage on npm
+    if: github.repository == 'stackradar/stackradar-node'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: npm
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate the release
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" != refs/heads/main ]]; then
+            echo '::error::Run releases from main.'
+            exit 1
+          fi
+          if [[ ! "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo '::error::Use a stable version such as 0.1.0.'
+            exit 1
+          fi
+          tag_commit="$(git rev-parse --verify "refs/tags/$TAG^{commit}" 2>/dev/null || true)"
+          if [[ -n "$tag_commit" && "$tag_commit" != "$GITHUB_SHA" ]]; then
+            echo '::error::That version already points to a different commit.'
+            exit 1
+          fi
+
+      - name: Check CI passed for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ci_url="$(
+            gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml \
+              --branch main --event push --commit "$GITHUB_SHA" \
+              --json headSha,status,conclusion,url --limit 20 \
+              | jq -r --arg sha "$GITHUB_SHA" \
+                '[.[] | select(.headSha == $sha and .status == "completed" and .conclusion == "success")][0].url // empty'
+          )"
+          if [[ -z "$ci_url" ]]; then
+            echo '::error::Wait for CI on this main commit to pass, then rerun Release.'
+            exit 1
+          fi
+          echo "CI passed: $ci_url"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing and npm stage need a newer npm than Node.js ships.
+      - name: Install npm
+        run: npm install --global npm@11.17.0
+
+      - name: Skip a version already on npm
+        id: npm
+        run: |
+          if npm view "@stackradar/node@$VERSION" version > /dev/null 2>&1; then
+            echo "$VERSION is already on npm."
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install
+        if: steps.npm.outputs.published != 'true'
+        run: npm ci
+
+      - name: Set the version
+        if: steps.npm.outputs.published != 'true'
+        run: npm version "$VERSION" --no-git-tag-version --workspace packages/node
+
+      - name: Build and test
+        if: steps.npm.outputs.published != 'true'
+        run: |
+          npm run build
+          npm test
+          npm run test:payload --workspace packages/node
+          npm run check:dependencies
+          npm run check:package-contents
+
+      - name: Stage on npm
+        if: steps.npm.outputs.published != 'true'
+        working-directory: packages/node
+        run: npm stage publish --provenance --access public
+
+  release:
+    name: Publish the GitHub Release
+    needs: stage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 130
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Wait for the version to be approved on npm
+        run: |
+          set -euo pipefail
+          echo "Approve the staged version with: npm stage approve <stage-id> (npm stage list @stackradar/node)"
+          deadline=$((SECONDS + 7200))
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            if npm view "@stackradar/node@$VERSION" version > /dev/null 2>&1; then
+              echo "$VERSION is on npm."
+              exit 0
+            fi
+            sleep 30
+          done
+          echo '::error::Not approved within two hours. Approve it, then re-run this job.'
+          exit 1
+
+      - name: Publish the tag and the release
+        run: |
+          set -euo pipefail
+          if ! git show-ref --verify --quiet "refs/tags/$TAG"; then
+            git tag "$TAG" "$GITHUB_SHA"
+            git push origin "refs/tags/$TAG"
+          fi
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false
+          else
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
+              --verify-tag --generate-notes --title "$TAG"
+          fi
