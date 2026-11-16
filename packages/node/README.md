@@ -104,7 +104,7 @@ Bun is supported through its Node.js compatibility, and so is Deno with a `node_
 
 ## Versions
 
-While the version is `0.x`, a breaking change raises the minor version: `0.1.x` to `0.2.0`. npm's default `^0.1.0` range stays within `0.1.x`, so `npm update` never brings a breaking change. Every change is in the [CHANGELOG](https://github.com/stackradar/stackradar-node/blob/main/packages/node/CHANGELOG.md).
+While the version is `0.x`, a breaking change raises the minor version: `0.1.x` to `0.2.0`. npm's default `^0.1.0` range stays within `0.1.x`, so `npm update` never brings a breaking change. Every change is in the [releases](https://github.com/stackradar/stackradar-node/releases).
 
 ## License
 

@@ -8,7 +8,7 @@ An npm package that runs inside production Node.js processes and reports their r
 - `packages/node/src/node/`: Node.js specifics: the app root, the dependency-tree walk, Yarn Plug'n'Play, the Build Inventory and the transport.
 - `packages/node/src/next.ts`, `packages/node/src/cli.ts`: the Next.js config wrapper and the `stackradar-node build-inventory` command.
 - `packages/node/test/`: tests, fixtures built from real installs, and the JSON Schemas of every request body in `test/schema/`.
-- `scripts/`: repository checks and release preparation.
+- `scripts/`: repository checks.
 
 ## Checks
 
@@ -40,4 +40,6 @@ CI also runs the tests on every supported Node.js version, Bun, Deno, a Next.js 
 ## Pull requests
 
 - `main` changes only through a pull request.
+- Each pull request gets one label: `semver:major`, `semver:minor`, `semver:patch` or `semver:chore`. The draft release is built from them.
+- `packages/node/package.json` stays at version `0.0.0`. The Release workflow sets the real version when it publishes.
 - Maintainers publish releases. Never publish, tag or approve one.

@@ -20,7 +20,7 @@ It has no dependencies, patches nothing, and never throws into the app.
    import '@stackradar/node/register';
    ```
 
-Next.js, other bundlers, configuration, what is sent, overhead and requirements are covered in the [package README](packages/node/README.md). Changes are listed in the [CHANGELOG](packages/node/CHANGELOG.md).
+Next.js, other bundlers, configuration, what is sent, overhead and requirements are covered in the [package README](packages/node/README.md). Changes are listed in the [releases](https://github.com/stackradar/stackradar-node/releases).
 
 ## Security
 
