@@ -4,18 +4,17 @@ name: Release
 # GitHub Release. The version is the release's tag, not a value in the
 # repository: packages/node/package.json stays at 0.0.0.
 #
-# The version is staged on npm through trusted publishing, with provenance.
-# A maintainer approves it with 2FA (`npm stage approve`) before anyone can
-# install it.
+# The version is published to npm through trusted publishing, with
+# provenance. No npm token is stored anywhere.
 #
-# Run it by hand with a version to stage a release again after a failure.
+# Run it by hand with a version to publish a release again after a failure.
 on:
   release:
     types: [published]
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version of an existing release to stage again, e.g. 0.1.0'
+        description: 'Version of an existing release to publish again, e.g. 0.1.0'
         required: true
         type: string
 
@@ -30,8 +29,8 @@ env:
   TAG: ${{ github.event.release.tag_name || format('v{0}', inputs.version) }}
 
 jobs:
-  stage:
-    name: Stage on npm
+  publish:
+    name: Publish to npm
     if: github.repository == 'stackradar/stackradar-node'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -86,7 +85,7 @@ jobs:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
 
-      # Trusted publishing and npm stage need a newer npm than Node.js ships.
+      # Trusted publishing needs a newer npm than Node.js ships.
       - name: Install npm
         run: npm install --global npm@11.17.0
 
@@ -115,9 +114,7 @@ jobs:
           npm run check:dependencies
           npm run check:package-contents
 
-      - name: Stage on npm
+      - name: Publish to npm
         if: steps.npm.outputs.published != 'true'
         working-directory: packages/node
-        run: |
-          npm stage publish --provenance --access public
-          echo "Staged $VERSION. Approve it with: npm stage approve <stage-id> (see npm stage list @stackradar/node)" >> "$GITHUB_STEP_SUMMARY"
+        run: npm publish --provenance --access public
