@@ -40,4 +40,4 @@ CI also runs the tests on every supported Node.js version, Bun, Deno, a Next.js 
 ## Pull requests
 
 - `main` changes only through a pull request.
-- Maintainers publish releases. The steps are in the [README](README.md#releases).
+- Maintainers publish releases. Never publish, tag or approve one.
