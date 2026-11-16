@@ -1,0 +1,45 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://stackradar.com/schema/package-list/1",
+    "title": "Package list, protocol version 1",
+    "description": "Everything @stackradar/node sends in PUT /v1/package-inventories/{inventory_hash}. Closed: a field that is not listed here is never sent.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["protocol_version", "ecosystem", "packages"],
+    "properties": {
+        "protocol_version": {
+            "description": "The protocol version.",
+            "const": 1
+        },
+        "ecosystem": {
+            "description": "The list's ecosystem.",
+            "const": "npm"
+        },
+        "packages": {
+            "description": "Every package in the list, without duplicates, sorted by the UTF-8 bytes of name and version.",
+            "type": "array",
+            "maxItems": 10000,
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "version"],
+                "properties": {
+                    "name": {
+                        "description": "The name in the package's own `package.json`, without control characters.",
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255,
+                        "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+                    },
+                    "version": {
+                        "description": "The version in the package's own `package.json`, without control characters.",
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255,
+                        "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+                    }
+                }
+            }
+        }
+    }
+}

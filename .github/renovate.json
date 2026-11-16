@@ -1,0 +1,30 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+    "dependencyDashboard": false,
+    "timezone": "Europe/Riga",
+    "labels": ["dependencies"],
+    "packageRules": [
+        {
+            "description": "Group GitHub Actions updates, including digest refreshes.",
+            "matchManagers": ["github-actions"],
+            "groupName": "GitHub Actions"
+        },
+        {
+            "description": "Group development tooling updates.",
+            "matchManagers": ["npm"],
+            "matchDepTypes": ["devDependencies"],
+            "groupName": "development tooling"
+        },
+        {
+            "description": "Keep Node.js types at the oldest supported Node.js major, so newer APIs fail to compile.",
+            "matchPackageNames": ["@types/node"],
+            "allowedVersions": "<19"
+        },
+        {
+            "description": "typescript-eslint supports TypeScript below 6.1 only.",
+            "matchPackageNames": ["typescript"],
+            "allowedVersions": "<6.1"
+        }
+    ]
+}

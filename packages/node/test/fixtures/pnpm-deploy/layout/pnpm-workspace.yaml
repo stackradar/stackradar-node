@@ -1,0 +1,12 @@
+ignorePnpmfile: true
+ignoredOptionalDependencies: []
+autoInstallPeers: true
+dedupePeerDependents: false
+dedupePeers: false
+peersSuffixMaxLength: 1000
+excludeLinksFromLockfile: false
+dedupeInjectedDeps: false
+injectWorkspacePackages: false
+packages:
+- '.'
+virtualStoreType: project

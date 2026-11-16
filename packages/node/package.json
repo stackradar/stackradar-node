@@ -1,0 +1,66 @@
+{
+    "name": "@stackradar/node",
+    "version": "0.0.0",
+    "description": "Reports which packages a production Node.js app is running to StackRadar.",
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/stackradar/stackradar-node.git",
+        "directory": "packages/node"
+    },
+    "type": "module",
+    "engines": {
+        "node": ">=18"
+    },
+    "main": "./dist/cjs/index.js",
+    "types": "./dist/cjs/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/esm/index.d.ts",
+                "default": "./dist/esm/index.js"
+            },
+            "require": {
+                "types": "./dist/cjs/index.d.ts",
+                "default": "./dist/cjs/index.js"
+            }
+        },
+        "./register": {
+            "import": {
+                "types": "./dist/esm/register.d.ts",
+                "default": "./dist/esm/register.js"
+            },
+            "require": {
+                "types": "./dist/cjs/register.d.ts",
+                "default": "./dist/cjs/register.js"
+            }
+        },
+        "./next": {
+            "import": {
+                "types": "./dist/esm/next.d.ts",
+                "default": "./dist/esm/next.js"
+            },
+            "require": {
+                "types": "./dist/cjs/next.d.ts",
+                "default": "./dist/cjs/next.js"
+            }
+        },
+        "./package.json": "./package.json"
+    },
+    "bin": {
+        "stackradar-node": "dist/cjs/cli.js"
+    },
+    "files": [
+        "dist"
+    ],
+    "sideEffects": [
+        "./dist/esm/register.js",
+        "./dist/cjs/register.js"
+    ],
+    "scripts": {
+        "build": "node scripts/build.mjs",
+        "typecheck": "tsc -p tsconfig.json --noEmit",
+        "test": "node --test test/configuration.test.mjs test/reporter.test.mjs test/release.test.mjs test/inventory.test.mjs test/app-root.test.mjs test/git.test.mjs test/runtime.test.mjs test/dependency-tree.test.mjs test/hostile-input.test.mjs test/build-inventory.test.mjs test/yarn-pnp.test.mjs test/fixtures.test.mjs test/build-inventory-writer.test.mjs test/lifecycle.test.mjs test/transport.test.mjs test/report.test.mjs test/host.test.mjs test/startup.test.mjs test/esm.test.mjs test/cjs.test.cjs test/cli.test.mjs",
+        "test:payload": "node --test test/payload.test.mjs"
+    }
+}

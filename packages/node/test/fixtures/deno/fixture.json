@@ -1,0 +1,20 @@
+{
+  "packageManager": "deno 2.9.8",
+  "layout": "isolated (node_modules/.deno store)",
+  "install": "deno install (deno.json: { \"nodeModulesDir\": \"manual\" })",
+  "apps": [
+    {
+      "appRoot": ".",
+      "status": "collected",
+      "packages": [
+        { "name": "debug", "version": "4.3.7" },
+        { "name": "ms", "version": "2.0.0" },
+        { "name": "ms", "version": "2.1.3" },
+        { "name": "picocolors", "version": "1.1.1" },
+        { "name": "semver", "version": "7.6.3" }
+      ]
+    }
+  ],
+  "oracle": "On-disk set of a fresh `deno install --prod` (no deno.lock, no node_modules; every version in package.json is exact): every package directory under node_modules, including the .deno store, de-duplicated by name and version.",
+  "notes": "`nodeModulesDir: \"manual\"` with `deno install` writes a real node_modules (\"auto\" gives the same tree): isolated, packages live in node_modules/.deno/<name>@<version>/node_modules/<name> and top-level entries are symlinks into it. Deno does not install the root package.json optionalDependencies at all: neither kleur nor fsevents is on disk, so kleur is correctly absent from the expected list (an optional dependency whose folder does not exist is left out). Deno also links the alias target by its real name: node_modules has both my-colors and picocolors pointing at picocolors@1.1.1. deno.lock does not record which dependencies are dev-only, so `deno install --prod --frozen-lockfile` from the full install's lockfile still installs is-number; the oracle therefore uses a fresh --prod install. The layout is the full install, so dev-only is-number is on disk and must not be reported. Installed on Linux aarch64 in Docker."
+}

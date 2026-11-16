@@ -1,0 +1,2 @@
+# Copied from real installs by packages/node/scripts/make-fixtures.mjs.
+packages/node/test/fixtures/** linguist-generated=true

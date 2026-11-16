@@ -1,0 +1,29 @@
+{
+    "name": "stackradar-node-workspace",
+    "private": true,
+    "workspaces": [
+        "packages/*"
+    ],
+    "scripts": {
+        "build": "npm run build --workspaces",
+        "typecheck": "npm run typecheck --workspaces",
+        "test": "npm test --workspaces",
+        "lint": "eslint .",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "check:dependencies": "node scripts/check-zero-dependencies.mjs",
+        "check:package-contents": "node scripts/check-package-contents.mjs",
+        "smoke": "node scripts/smoke-test.mjs"
+    },
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "@types/node": "^18.19.130",
+        "ajv": "^8.20.0",
+        "eslint": "^10.14.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-n": "^18.5.0",
+        "prettier": "^3.9.10",
+        "typescript": "~6.0.3",
+        "typescript-eslint": "^8.72.1"
+    }
+}

@@ -1,0 +1,11 @@
+node_modules/
+!packages/node/test/fixtures/**/node_modules/
+dist/
+*.tgz
+
+# Local agent configuration
+CLAUDE.local.md
+AGENTS.override.md
+.claude/settings.local.json
+.claude/skills/
+.agents/

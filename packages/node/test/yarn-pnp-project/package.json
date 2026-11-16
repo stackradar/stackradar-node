@@ -1,0 +1,20 @@
+{
+    "name": "yarn-pnp-project",
+    "version": "1.0.0",
+    "private": true,
+    "dependencies": {
+        "debug": "4.3.7",
+        "ms": "2.0.0",
+        "my-colors": "npm:picocolors@1.1.1",
+        "overlap-lib": "file:./overlap-lib",
+        "semver": "7.6.3"
+    },
+    "optionalDependencies": {
+        "fsevents": "2.3.3",
+        "kleur": "4.1.5"
+    },
+    "devDependencies": {
+        "has-flag": "5.0.1",
+        "is-number": "7.0.0"
+    }
+}

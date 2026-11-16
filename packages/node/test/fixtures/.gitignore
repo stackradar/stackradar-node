@@ -1,0 +1,2 @@
+# Installed trees: keep them as the package managers wrote them.
+!dist/

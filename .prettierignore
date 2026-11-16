@@ -1,0 +1,7 @@
+# Markdown is written by hand; Prettier would re-pad every table.
+*.md
+LICENSE
+package-lock.json
+dist/
+# Copied from real installs; kept as the package managers wrote them.
+packages/node/test/fixtures/

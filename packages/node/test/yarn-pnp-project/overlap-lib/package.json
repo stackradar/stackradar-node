@@ -1,0 +1,10 @@
+{
+    "name": "overlap-lib",
+    "version": "1.0.0",
+    "dependencies": {
+        "has-flag": "4.0.0"
+    },
+    "peerDependencies": {
+        "has-flag": "^4.0.0 || ^5.0.0"
+    }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "dependencies": {
+    "@acme/shared": "@acme/shared@file:///w/packages/shared",
+    "debug": "4.3.7"
+  },
+  "devDependencies": {},
+  "optionalDependencies": {}
+}

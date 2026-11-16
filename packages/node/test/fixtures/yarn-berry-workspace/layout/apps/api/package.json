@@ -1,0 +1,8 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "dependencies": {
+    "@acme/shared": "workspace:*",
+    "debug": "4.3.7"
+  }
+}

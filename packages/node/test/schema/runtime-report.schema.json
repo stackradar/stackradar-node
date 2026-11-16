@@ -1,0 +1,246 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://stackradar.com/schema/runtime-report/1",
+    "title": "Runtime Report, protocol version 1",
+    "description": "Everything @stackradar/node sends in POST /v1/runtime-reports. Closed: a field that is not listed here is never sent.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "protocol_version",
+        "reporter",
+        "instance",
+        "deployment",
+        "runtime",
+        "platform",
+        "packages"
+    ],
+    "properties": {
+        "protocol_version": {
+            "description": "The protocol version.",
+            "const": 1
+        },
+        "reporter": {
+            "description": "The reporter that sent the report.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "version"],
+            "properties": {
+                "name": {
+                    "description": "The reporter's package name.",
+                    "const": "@stackradar/node"
+                },
+                "version": {
+                    "description": "The reporter's version.",
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50
+                }
+            }
+        },
+        "instance": {
+            "description": "The running process.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "started_at"],
+            "properties": {
+                "id": {
+                    "description": "A random UUID, new for every process; not derived from the host.",
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                },
+                "started_at": {
+                    "description": "When the process started, in UTC.",
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+                }
+            }
+        },
+        "deployment": {
+            "description": "Where the Instance runs.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["environment", "service", "release", "artifact"],
+            "properties": {
+                "environment": {
+                    "description": "The Deployment Environment, configured or detected; `null` when neither.",
+                    "type": ["string", "null"],
+                    "minLength": 1,
+                    "maxLength": 255
+                },
+                "service": {
+                    "description": "The Service, configured or the app's `package.json` name; `null` when neither.",
+                    "type": ["string", "null"],
+                    "minLength": 1,
+                    "maxLength": 255
+                },
+                "release": {
+                    "description": "The Release, configured or detected; `null` when none is found.",
+                    "type": ["object", "null"],
+                    "additionalProperties": false,
+                    "required": ["value", "source"],
+                    "properties": {
+                        "value": {
+                            "description": "The Release, usually a commit SHA.",
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 255
+                        },
+                        "source": {
+                            "description": "Where it was found: `init`, `env:<NAME>` or `git`.",
+                            "type": "string",
+                            "maxLength": 100,
+                            "pattern": "^(init|git|env:[A-Z0-9_]+)$"
+                        }
+                    }
+                },
+                "artifact": {
+                    "description": "The image digest or build ID set at build time; `null` when not set.",
+                    "type": ["string", "null"],
+                    "minLength": 1,
+                    "maxLength": 255
+                }
+            }
+        },
+        "runtime": {
+            "description": "The runtime the app runs on.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "versions", "release"],
+            "properties": {
+                "name": {
+                    "description": "The runtime.",
+                    "enum": ["node", "bun", "deno"]
+                },
+                "versions": {
+                    "description": "The runtime's own version strings, such as `node`, `v8`, `openssl` and `uv`.",
+                    "type": "object",
+                    "maxProperties": 200,
+                    "additionalProperties": {
+                        "description": "One version.",
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                    }
+                },
+                "release": {
+                    "description": "The runtime's release line; `null` when the runtime does not say.",
+                    "type": ["object", "null"],
+                    "additionalProperties": false,
+                    "required": ["name"],
+                    "properties": {
+                        "name": {
+                            "description": "The release name, such as `node`.",
+                            "type": "string"
+                        },
+                        "lts": {
+                            "description": "The long-term support codename, such as `Jod`, when there is one.",
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "platform": {
+            "description": "The operating system the app runs on.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["os", "arch", "os_release", "libc"],
+            "properties": {
+                "os": {
+                    "description": "The operating system, such as `linux`.",
+                    "type": "string"
+                },
+                "arch": {
+                    "description": "The processor architecture, such as `x64`.",
+                    "type": "string"
+                },
+                "os_release": {
+                    "description": "The kernel release; `null` when it cannot be read.",
+                    "type": ["string", "null"]
+                },
+                "libc": {
+                    "description": "The C library on glibc Linux; `null` otherwise, including musl.",
+                    "type": ["object", "null"],
+                    "additionalProperties": false,
+                    "required": ["family", "version"],
+                    "properties": {
+                        "family": {
+                            "description": "The C library.",
+                            "const": "glibc"
+                        },
+                        "version": {
+                            "description": "Its version.",
+                            "type": "string",
+                            "minLength": 1
+                        }
+                    }
+                }
+            }
+        },
+        "packages": {
+            "description": "What the package list holds; the list itself is uploaded separately.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["detector", "status", "ecosystem", "inventory_hash"],
+            "properties": {
+                "detector": {
+                    "description": "The detector that answered; informational.",
+                    "type": "string",
+                    "maxLength": 50,
+                    "pattern": "^[a-z0-9][a-z0-9-]*$"
+                },
+                "status": {
+                    "description": "How complete the list is.",
+                    "enum": ["collected", "partial", "not_found", "failed"]
+                },
+                "ecosystem": {
+                    "description": "The list's ecosystem; `null` unless `collected` or `partial`.",
+                    "enum": ["npm", null]
+                },
+                "inventory_hash": {
+                    "description": "The list's hash; `null` unless `collected` or `partial`.",
+                    "type": ["string", "null"],
+                    "pattern": "^[0-9a-f]{64}$"
+                },
+                "errors": {
+                    "description": "What the reporter could not read; absent when there is nothing to say.",
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 50,
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["code"],
+                        "properties": {
+                            "code": {
+                                "description": "A reporter error code, or a file system code such as `EACCES`.",
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_]+$"
+                            },
+                            "path": {
+                                "description": "The file, relative to the app root, with `/` separators.",
+                                "type": "string",
+                                "minLength": 1
+                            }
+                        }
+                    }
+                }
+            },
+            "if": {
+                "properties": { "status": { "enum": ["collected", "partial"] } }
+            },
+            "then": {
+                "properties": {
+                    "ecosystem": { "const": "npm" },
+                    "inventory_hash": { "type": "string" }
+                }
+            },
+            "else": {
+                "properties": {
+                    "ecosystem": { "const": null },
+                    "inventory_hash": { "const": null }
+                }
+            }
+        }
+    }
+}
