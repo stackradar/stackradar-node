@@ -1,21 +1,21 @@
 name: Release
 
-# Publishes a version of @stackradar/node. Started by a maintainer with the
-# version to release. The version is set here, not in the repository:
-# packages/node/package.json stays at 0.0.0.
+# Publishes a version of @stackradar/node when a maintainer publishes its
+# GitHub Release. The version is the release's tag, not a value in the
+# repository: packages/node/package.json stays at 0.0.0.
 #
 # The version is staged on npm through trusted publishing, with provenance.
 # A maintainer approves it with 2FA (`npm stage approve`) before anyone can
-# install it. The tag and the GitHub Release follow once it is on npm.
+# install it.
 #
-# Staging and the release are separate jobs: if the release job times out
-# waiting for the approval, "Re-run failed jobs" retries only that job,
-# because npm refuses to stage the same version twice.
+# Run it by hand with a version to stage a release again after a failure.
 on:
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release, e.g. 0.1.0'
+        description: 'Version of an existing release to stage again, e.g. 0.1.0'
         required: true
         type: string
 
@@ -27,8 +27,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  VERSION: ${{ inputs.version }}
-  TAG: v${{ inputs.version }}
+  TAG: ${{ github.event.release.tag_name || format('v{0}', inputs.version) }}
 
 jobs:
   stage:
@@ -42,43 +41,41 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - name: Checkout
+      - name: Read the version
+        run: |
+          set -euo pipefail
+          if [[ ! "$TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo '::error::Release tags look like v0.1.0.'
+            exit 1
+          fi
+          echo "VERSION=${TAG#v}" >> "$GITHUB_ENV"
+
+      - name: Checkout the release
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: refs/tags/${{ env.TAG }}
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Validate the release
-        run: |
-          set -euo pipefail
-          if [[ "$GITHUB_REF" != refs/heads/main ]]; then
-            echo '::error::Run releases from main.'
-            exit 1
-          fi
-          if [[ ! "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
-            echo '::error::Use a stable version such as 0.1.0.'
-            exit 1
-          fi
-          tag_commit="$(git rev-parse --verify "refs/tags/$TAG^{commit}" 2>/dev/null || true)"
-          if [[ -n "$tag_commit" && "$tag_commit" != "$GITHUB_SHA" ]]; then
-            echo '::error::That version already points to a different commit.'
-            exit 1
-          fi
-
-      - name: Check CI passed for this commit
+      - name: Check the release is a commit on main that passed CI
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          sha="$(git rev-parse HEAD)"
+          if ! git merge-base --is-ancestor "$sha" origin/main; then
+            echo '::error::The release tag is not on main.'
+            exit 1
+          fi
           ci_url="$(
             gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml \
-              --branch main --event push --commit "$GITHUB_SHA" \
+              --branch main --event push --commit "$sha" \
               --json headSha,status,conclusion,url --limit 20 \
-              | jq -r --arg sha "$GITHUB_SHA" \
+              | jq -r --arg sha "$sha" \
                 '[.[] | select(.headSha == $sha and .status == "completed" and .conclusion == "success")][0].url // empty'
           )"
           if [[ -z "$ci_url" ]]; then
-            echo '::error::Wait for CI on this main commit to pass, then rerun Release.'
+            echo '::error::CI has not passed for this commit on main.'
             exit 1
           fi
           echo "CI passed: $ci_url"
@@ -121,46 +118,6 @@ jobs:
       - name: Stage on npm
         if: steps.npm.outputs.published != 'true'
         working-directory: packages/node
-        run: npm stage publish --provenance --access public
-
-  release:
-    name: Publish the GitHub Release
-    needs: stage
-    runs-on: ubuntu-24.04
-    timeout-minutes: 130
-    permissions:
-      contents: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Wait for the version to be approved on npm
         run: |
-          set -euo pipefail
-          echo "Approve the staged version with: npm stage approve <stage-id> (npm stage list @stackradar/node)"
-          deadline=$((SECONDS + 7200))
-          while [ "$SECONDS" -lt "$deadline" ]; do
-            if npm view "@stackradar/node@$VERSION" version > /dev/null 2>&1; then
-              echo "$VERSION is on npm."
-              exit 0
-            fi
-            sleep 30
-          done
-          echo '::error::Not approved within two hours. Approve it, then re-run this job.'
-          exit 1
-
-      - name: Publish the tag and the release
-        run: |
-          set -euo pipefail
-          if ! git show-ref --verify --quiet "refs/tags/$TAG"; then
-            git tag "$TAG" "$GITHUB_SHA"
-            git push origin "refs/tags/$TAG"
-          fi
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false
-          else
-            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
-              --verify-tag --generate-notes --title "$TAG"
-          fi
+          npm stage publish --provenance --access public
+          echo "Staged $VERSION. Approve it with: npm stage approve <stage-id> (see npm stage list @stackradar/node)" >> "$GITHUB_STEP_SUMMARY"
