@@ -3,7 +3,8 @@
     "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
     "dependencyDashboard": false,
     "timezone": "Europe/Riga",
-    "labels": ["dependencies"],
+    "labels": ["semver:chore"],
+    "minimumReleaseAge": "7 days",
     "packageRules": [
         {
             "description": "Group GitHub Actions updates, including digest refreshes.",
